@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic MySQL Data Viewer</title>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; }
+    button { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    function App() {
+      const [instance, setInstance] = React.useState('');
+      const [tables, setTables] = React.useState([]);
+      const [newTableName, setNewTableName] = React.useState('');
+      const [newColumnName, setNewColumnName] = React.useState('');
+
+      React.useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const dbInstance = params.get('instance');
+        if (dbInstance) {
+          setInstance(dbInstance);
+          fetchTables(dbInstance);
+        }
+      }, []);
+
+      const fetchTables = async (dbInstance) => {
+        try {
+          const response = await axios.get(`/api/tables?instance=${dbInstance}`);
+          setTables(response.data);
+        } catch (error) {
+          console.error('Error fetching tables:', error);
+        }
+      };
+
+      const handleDeleteTable = async (tableName) => {
+        try {
+          await axios.delete(`/api/tables/${tableName}?instance=${instance}`);
+          fetchTables(instance);
+        } catch (error) {
+          console.error('Error deleting table:', error);
+        }
+      };
+
+      const handleAddTable = async () => {
+        try {
+          await axios.post('/api/tables', { instance, tableName: newTableName, columns: ['id'] });
+          setNewTableName('');
+          fetchTables(instance);
+        } catch (error) {
+          console.error('Error adding table:', error);
+        }
+      };
+
+      const handleAddColumn = async (tableName) => {
+        try {
+          await axios.post('/api/columns', { instance, tableName, columnName: newColumnName });
+          setNewColumnName('');
+          fetchTables(instance);
+        } catch (error) {
+          console.error('Error adding column:', error);
+        }
+      };
+
+      const handleDeleteColumn = async (tableName, columnName) => {
+        try {
+          await axios.delete('/api/columns', { data: { instance, tableName, columnName } });
+          fetchTables(instance);
+        } catch (error) {
+          console.error('Error deleting column:', error);
+        }
+      };
+
+      return (
+        <div>
+          <h1>Dynamic MySQL Data Viewer</h1>
+          <h2>Database: {instance}</h2>
+          <div>
+            <input
+              type="text"
+              value={newTableName}
+              onChange={(e) => setNewTableName(e.target.value)}
+              placeholder="New table name"
+            />
+            <button onClick={handleAddTable}>Add Table</button>
+          </div>
+          <ul>
+            {tables.map((table) => (
+              <li key={table.name}>
+                <h3>{table.name}</h3>
+                <button onClick={() => handleDeleteTable(table.name)}>Delete Table</button>
+                <ul>
+                  {table.columns.map((column) => (
+                    <li key={column}>
+                      {column}
+                      {column !== 'id' && (
+                        <button onClick={() => handleDeleteColumn(table.name, column)}>Delete Column</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <input
+                  type="text"
+                  value={newColumnName}
+                  onChange={(e) => setNewColumnName(e.target.value)}
+                  placeholder="New column name"
+                />
+                <button onClick={() => handleAddColumn(table.name)}>Add Column</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

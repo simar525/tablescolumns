@@ -1,0 +1,19 @@
+{
+  "name": "dynamic-mysql-data-viewer",
+  "version": "1.0.0",
+  "description": "Display and manage MySQL database tables and columns",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "mysql2": "^2.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
